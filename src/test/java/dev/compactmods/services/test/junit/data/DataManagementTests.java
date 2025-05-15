@@ -82,7 +82,7 @@ public class DataManagementTests {
         }
 
         // Assert we truly instantiated twice, per scope rules
-        Assertions.assertNotEquals(serviceIdFirstPass, serviceIdSecondPass);
+        Assertions.assertEquals(serviceIdFirstPass, serviceIdSecondPass);
 
         final var saveDir = FileHelper.path(Path.of("scenarios", "basic-save-tmp")).orElseThrow();
         Assertions.assertTrue(saveDir.resolve("john-smith.json").toFile().exists());

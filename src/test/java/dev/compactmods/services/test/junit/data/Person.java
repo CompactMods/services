@@ -6,6 +6,8 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 public class Person {
 
+    private static final Faker f = new Faker();
+
     public static final Codec<Person> CODEC = RecordCodecBuilder.create(i -> i.group(
             Codec.STRING.fieldOf("name").forGetter(Person::name),
             Codec.STRING.fieldOf("sex").forGetter(Person::sex),
@@ -33,7 +35,6 @@ public class Person {
     public int age() { return this.age; }
 
     public void randomize() {
-        final var f = new Faker();
         this.name = f.name().fullName();
         this.sex = f.demographic().sex();
         this.age = f.number().numberBetween(18, 120);

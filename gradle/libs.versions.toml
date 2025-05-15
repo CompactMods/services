@@ -2,3 +2,20 @@
 jmh = "1.37"
 
 [libraries.commons-io]
+module = "commons-io:commons-io"
+version = "2.15.1"
+
+[libraries.javafaker]
+module = "com.github.javafaker:javafaker"
+version = "1.0.2"
+
+[libraries.jmh-core]
+module = "org.openjdk.jmh:jmh-core"
+version.ref = "jmh"
+
+[libraries.jmh-generator]
+module = "org.openjdk.jmh:jmh-generator-annprocess"
+version.ref = "jmh"
+
+[bundles]
+jmh = ["jmh-core", "jmh-generator"]

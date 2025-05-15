@@ -2,24 +2,29 @@ package dev.compactmods.services.impl;
 
 import dev.compactmods.services.IServiceScopeProvider;
 import dev.compactmods.services.IServiceScope;
+import dev.compactmods.services.impl.lifecycle.CloseScopeTask;
+import dev.compactmods.services.impl.lifecycle.ScopeDisposingCloseHandler;
 import dev.compactmods.services.impl.scope.DisposableServiceScope;
+import dev.compactmods.services.lifecycle.ScopeCloseHandler;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectArraySet;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 
 public class BasicServiceProvider implements IServiceScopeProvider, AutoCloseable {
 
     private final Map<UUID, IServiceScope> serviceScopes;
+    private final Map<UUID, ScopeCloseHandler> cleanupHandlers;
     private final Map<Object, UUID> keyedScopeMap;
 
     private static final UUID DEFAULT_SCOPE = new UUID(0, 0);
 
     private BasicServiceProvider() {
         this.serviceScopes = new Object2ReferenceOpenHashMap<>();
+        this.cleanupHandlers = new Object2ReferenceOpenHashMap<>();
         this.keyedScopeMap = new Reference2ObjectOpenHashMap<>();
     }
 
@@ -35,20 +40,23 @@ public class BasicServiceProvider implements IServiceScopeProvider, AutoCloseabl
     @Override
     public <TScopeKey> IServiceScope scope(TScopeKey key) {
         UUID locatedServiceKey;
-        if(!keyedScopeMap.containsKey(key)) {
+        if (!keyedScopeMap.containsKey(key)) {
             locatedServiceKey = UUID.randomUUID();
 
             var scope = new DisposableServiceScope(locatedServiceKey);
             scope.registerSingletonResource(key);
 
-            scope.disposalHandler().afterDisposed(disposing -> {
+            var cleanupHandler = new ScopeDisposingCloseHandler(s -> {
                 //noinspection resource
-                this.serviceScopes.remove(disposing.id());
-                this.keyedScopeMap.remove(key);
+                this.serviceScopes.remove(s.id());
+                this.keyedScopeMap.remove(s.id());
             });
+
+            scope.disposalHandler().addAfterCloseHandler(cleanupHandler);
 
             this.serviceScopes.put(locatedServiceKey, scope);
             this.keyedScopeMap.put(key, locatedServiceKey);
+            this.cleanupHandlers.put(scope.id(), cleanupHandler);
 
             return scope;
         }
@@ -59,20 +67,25 @@ public class BasicServiceProvider implements IServiceScopeProvider, AutoCloseabl
 
     @Override
     public void close() throws Exception {
-        Set<UUID> scopes = serviceScopes.keySet();
-        try(var execs = Executors.newFixedThreadPool(scopes.size())) {
-            for (var scope : scopes) {
-                IServiceScope iServiceScope = serviceScopes.get(scope);
-                execs.submit(() -> {
-                    try {
-                        iServiceScope.close();
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                });
-            }
+        final var execs = Executors.newCachedThreadPool();
 
-            var ignored = execs.awaitTermination(10, java.util.concurrent.TimeUnit.SECONDS);
+        // Clear out all disposal callbacks that are registered on scope init
+        serviceScopes.values().forEach(scope -> {
+            var handler = cleanupHandlers.get(scope.id());
+            scope.disposalHandler().removeAfterCloseHandler(handler);
+        });
+
+        try (execs) {
+            final var closeables = new ObjectArraySet<CloseScopeTask>(serviceScopes.size());
+            serviceScopes.values().forEach(scope -> {
+                closeables.add(new CloseScopeTask(scope));
+            });
+
+            execs.invokeAll(closeables);
         }
+
+        // Clear out maps
+        serviceScopes.clear();
+        keyedScopeMap.clear();
     }
 }
