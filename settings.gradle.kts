@@ -1,7 +1,5 @@
 dependencyResolutionManagement {
-    addVersionCatalog(this, "neoforged")
     addVersionCatalog(this, "mojang")
-//    addVersionCatalog(this, "compactmods")
 }
 
 pluginManagement {
@@ -15,16 +13,6 @@ pluginManagement {
         mavenLocal()
         mavenCentral()
         gradlePluginPortal()
-
-        // maven("https://maven.architectury.dev/")
-
-        maven("https://maven.parchmentmc.org") {
-            name = "ParchmentMC"
-        }
-
-        maven("https://maven.neoforged.net/releases") {
-            name = "NeoForged"
-        }
     }
 }
 

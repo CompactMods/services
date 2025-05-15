@@ -5,7 +5,6 @@ import dev.compactmods.services.IServiceScope;
 import dev.compactmods.services.impl.scope.DisposableServiceScope;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
-import net.minecraft.resources.ResourceLocation;
 
 import java.util.Map;
 import java.util.Set;
@@ -17,7 +16,7 @@ public class BasicServiceProvider implements IServiceScopeProvider, AutoCloseabl
     private final Map<UUID, IServiceScope> serviceScopes;
     private final Map<Object, UUID> keyedScopeMap;
 
-    private static final ResourceLocation DEFAULT_SCOPE = ResourceLocation.fromNamespaceAndPath("compactmods", "default");
+    private static final UUID DEFAULT_SCOPE = new UUID(0, 0);
 
     private BasicServiceProvider() {
         this.serviceScopes = new Object2ReferenceOpenHashMap<>();
