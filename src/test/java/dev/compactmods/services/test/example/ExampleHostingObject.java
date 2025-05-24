@@ -1,4 +1,4 @@
-package dev.compactmods.services.test.services;
+package dev.compactmods.services.test.example;
 
 import java.util.UUID;
 

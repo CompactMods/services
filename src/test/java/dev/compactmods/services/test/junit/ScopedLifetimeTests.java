@@ -1,9 +1,8 @@
 package dev.compactmods.services.test.junit;
 
 import dev.compactmods.services.impl.BasicServiceProvider;
-import dev.compactmods.services.test.services.ExampleHostingObject;
-import dev.compactmods.services.test.services.CountingService;
-import dev.compactmods.services.test.services.MyServices;
+import dev.compactmods.services.test.example.CountingService;
+import dev.compactmods.services.test.example.MyServices;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -20,7 +19,7 @@ public class ScopedLifetimeTests {
         var scopedServices = provider.scope(scopeKey);
 
         // Scope Access 1 - Initial State
-        try(var example = scopedServices.service(MyServices.SCOPED_EXAMPLE)) {
+        try(var example = scopedServices.getOrCreateService(MyServices.SCOPED_EXAMPLE)) {
             Assertions.assertNotNull(example);
             Assertions.assertInstanceOf(CountingService.class, example);
             Assertions.assertEquals(0, example.count());
@@ -41,7 +40,7 @@ public class ScopedLifetimeTests {
         var scopedServices = provider.scope(scopeKey);
 
         // Scope Access 1 - Initial State
-        CountingService example = scopedServices.service(MyServices.SCOPED_EXAMPLE);
+        CountingService example = scopedServices.getOrCreateService(MyServices.SCOPED_EXAMPLE);
         try(example) {
             Assertions.assertNotNull(example);
             Assertions.assertInstanceOf(CountingService.class, example);
@@ -52,7 +51,7 @@ public class ScopedLifetimeTests {
         }
 
         // Scope Access 2 - Should Be Same Instance
-        try(var example2 = scopedServices.service(MyServices.SCOPED_EXAMPLE)) {
+        try(var example2 = scopedServices.getOrCreateService(MyServices.SCOPED_EXAMPLE)) {
             Assertions.assertEquals(1, example2.count());
             Assertions.assertSame(example, example2);
         }

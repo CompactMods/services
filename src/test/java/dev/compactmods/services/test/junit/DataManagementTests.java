@@ -1,8 +1,9 @@
-package dev.compactmods.services.test.junit.data;
+package dev.compactmods.services.test.junit;
 
 import dev.compactmods.services.ServiceDescriptors;
 import dev.compactmods.services.impl.BasicServiceProvider;
 import dev.compactmods.services.resolution.IServiceDescriptor;
+import dev.compactmods.services.test.example.data.PersonManagementService;
 import dev.compactmods.services.test.util.FileHelper;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Assertions;
@@ -16,10 +17,14 @@ import java.util.function.Supplier;
 
 public class DataManagementTests {
 
-    public static final Supplier<Path> TMP_SAVE_DIR = () -> FileHelper.path(Path.of("scenarios", "basic-save-tmp")).orElseThrow();
+    public static final IServiceDescriptor<Path> TMP_SAVE_DIR_SRV = ServiceDescriptors
+            .singleton(() -> FileHelper.path(Path.of("scenarios", "basic-save-tmp")).orElseThrow());
 
     public static final IServiceDescriptor<PersonManagementService> PEOPLE = ServiceDescriptors.scoped(PersonManagementService.class,
-            services -> new PersonManagementService(TMP_SAVE_DIR.get()));
+            services -> {
+                final Path path = TMP_SAVE_DIR_SRV.resolver().resolve(services);
+                return new PersonManagementService(path);
+            });
 
     @BeforeAll
     public static void setup() throws IOException {
@@ -37,8 +42,8 @@ public class DataManagementTests {
         final var scope = services.defaultScope();
 
         UUID pass1, pass2;
-        var peopleSrv1 = scope.service(PEOPLE);
-        var peopleSrv2 = scope.service(PEOPLE);
+        var peopleSrv1 = scope.getOrCreateService(PEOPLE);
+        var peopleSrv2 = scope.getOrCreateService(PEOPLE);
 
         // Because we have not disposed of our scope, both of these should have resolved to the same service instance
         pass1 = peopleSrv1.getServiceID();
@@ -57,7 +62,7 @@ public class DataManagementTests {
 
         // Scope 1: Open, Verify, and then Randomize Data
         UUID serviceIdFirstPass;
-        try(var peopleSrv = scope.service(PEOPLE)) {
+        try (var peopleSrv = scope.getOrCreateService(PEOPLE)) {
             serviceIdFirstPass = peopleSrv.getServiceID();
             peopleSrv.getPerson("john-smith.json").ifPresent(john -> {
                 // Initial Data
@@ -72,7 +77,7 @@ public class DataManagementTests {
 
         // Scope 2: Verify data randomized
         UUID serviceIdSecondPass;
-        try(var peopleSrv = scope.service(PEOPLE)) {
+        try (var peopleSrv = scope.getOrCreateService(PEOPLE)) {
             serviceIdSecondPass = peopleSrv.getServiceID();
             peopleSrv.getPerson("john-smith.json").ifPresent(john -> {
                 // New Data

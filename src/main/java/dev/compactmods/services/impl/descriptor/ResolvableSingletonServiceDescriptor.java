@@ -1,24 +1,26 @@
 package dev.compactmods.services.impl.descriptor;
 
 import dev.compactmods.services.impl.ServiceLifetime;
-import dev.compactmods.services.impl.resolver.ClassMatchingServiceResolver;
 import dev.compactmods.services.resolution.IServiceDescriptor;
 import dev.compactmods.services.resolution.IServiceResolver;
 
-public record ClassBasedServiceDescriptor<TSrv>(Class<TSrv> clazz) implements IServiceDescriptor<TSrv> {
+import java.util.function.Supplier;
+
+public record ResolvableSingletonServiceDescriptor<TSrv>(Supplier<TSrv> supplier) implements IServiceDescriptor<TSrv> {
 
     @Override
     public ServiceLifetime lifetime() {
-        return ServiceLifetime.Scoped;
+        return ServiceLifetime.Singleton;
     }
 
     @Override
     public Class<TSrv> type() {
-        return clazz;
+        //noinspection unchecked
+        return (Class<TSrv>) supplier.get().getClass();
     }
 
     @Override
     public IServiceResolver<TSrv> resolver() {
-        return new ClassMatchingServiceResolver<>(clazz);
+        return services -> supplier.get();
     }
 }

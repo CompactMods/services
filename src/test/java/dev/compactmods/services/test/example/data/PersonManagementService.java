@@ -1,4 +1,4 @@
-package dev.compactmods.services.test.junit.data;
+package dev.compactmods.services.test.example.data;
 
 import com.mojang.serialization.JsonOps;
 import dev.compactmods.services.test.util.FileHelper;

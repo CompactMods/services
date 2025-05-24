@@ -1,8 +1,8 @@
 package dev.compactmods.services.resolution;
 
-import dev.compactmods.services.IServiceScope;
+import dev.compactmods.services.IServiceProvider;
 
 @FunctionalInterface
 public interface IServiceResolver<TSrv> {
-    TSrv resolve(IServiceScope scopedServices);
+    TSrv resolve(IServiceProvider services);
 }

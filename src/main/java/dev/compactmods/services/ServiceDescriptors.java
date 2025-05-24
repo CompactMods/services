@@ -1,12 +1,14 @@
 package dev.compactmods.services;
 
 import dev.compactmods.services.impl.ServiceLifetime;
-import dev.compactmods.services.impl.descriptor.ClassBasedServiceDescriptor;
+import dev.compactmods.services.impl.descriptor.ResolvableSingletonServiceDescriptor;
 import dev.compactmods.services.impl.descriptor.JavaServiceLoaderServiceDescriptor;
 import dev.compactmods.services.impl.descriptor.ResolvableServiceDescriptor;
 import dev.compactmods.services.impl.descriptor.SingletonInstanceServiceDescriptor;
 import dev.compactmods.services.resolution.IServiceDescriptor;
 import dev.compactmods.services.resolution.IServiceResolver;
+
+import java.util.function.Supplier;
 
 public abstract class ServiceDescriptors {
 
@@ -18,15 +20,11 @@ public abstract class ServiceDescriptors {
         return new SingletonInstanceServiceDescriptor<>(instance);
     }
 
-    public static <TSrv> IServiceDescriptor<TSrv> singleton(Class<TSrv> serviceClass, IServiceResolver<TSrv> resolver) {
-        return new ResolvableServiceDescriptor<>(serviceClass, resolver, ServiceLifetime.Singleton);
+    public static <TSrv> IServiceDescriptor<TSrv> singleton(Supplier<TSrv> supplier) {
+        return new ResolvableSingletonServiceDescriptor<>(supplier);
     }
 
-    public static <TSrv> IServiceDescriptor<TSrv> singleton(Class<TSrv> serviceClass) {
-        return new ClassBasedServiceDescriptor<>(serviceClass);
-    }
-
-    public static <TSrv> IServiceDescriptor<TSrv> javaLocated(Class<TSrv> resourceClass) {
+    public static <TSrv> IServiceDescriptor<TSrv> serviceLoader(Class<TSrv> resourceClass) {
         return new JavaServiceLoaderServiceDescriptor<>(resourceClass);
     }
 }

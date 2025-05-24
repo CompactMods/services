@@ -1,16 +1,19 @@
 package dev.compactmods.services.impl;
 
+import dev.compactmods.services.IServiceProvider;
 import dev.compactmods.services.IServiceScopeProvider;
 import dev.compactmods.services.IServiceScope;
 import dev.compactmods.services.impl.lifecycle.CloseScopeTask;
 import dev.compactmods.services.impl.lifecycle.ScopeDisposingCloseHandler;
 import dev.compactmods.services.impl.scope.DisposableServiceScope;
 import dev.compactmods.services.lifecycle.ScopeCloseHandler;
+import dev.compactmods.services.resolution.IServiceDescriptor;
 import it.unimi.dsi.fastutil.objects.Object2ReferenceOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArraySet;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 
@@ -19,6 +22,7 @@ public class BasicServiceProvider implements IServiceScopeProvider, AutoCloseabl
     private final Map<UUID, IServiceScope> serviceScopes;
     private final Map<UUID, ScopeCloseHandler> cleanupHandlers;
     private final Map<Object, UUID> keyedScopeMap;
+    private final ServiceCache singletonServices;
 
     private static final UUID DEFAULT_SCOPE = new UUID(0, 0);
 
@@ -26,6 +30,7 @@ public class BasicServiceProvider implements IServiceScopeProvider, AutoCloseabl
         this.serviceScopes = new Object2ReferenceOpenHashMap<>();
         this.cleanupHandlers = new Object2ReferenceOpenHashMap<>();
         this.keyedScopeMap = new Reference2ObjectOpenHashMap<>();
+        this.singletonServices = ServiceCache.create();
     }
 
     public static BasicServiceProvider create() {
@@ -43,8 +48,7 @@ public class BasicServiceProvider implements IServiceScopeProvider, AutoCloseabl
         if (!keyedScopeMap.containsKey(key)) {
             locatedServiceKey = UUID.randomUUID();
 
-            var scope = new DisposableServiceScope(locatedServiceKey);
-            scope.registerSingletonResource(key);
+            var scope = new DisposableServiceScope(locatedServiceKey, singletonServices);
 
             var cleanupHandler = new ScopeDisposingCloseHandler(s -> {
                 //noinspection resource
@@ -83,6 +87,8 @@ public class BasicServiceProvider implements IServiceScopeProvider, AutoCloseabl
 
             execs.invokeAll(closeables);
         }
+
+        singletonServices.clear();
 
         // Clear out maps
         serviceScopes.clear();

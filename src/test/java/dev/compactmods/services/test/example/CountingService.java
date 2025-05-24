@@ -1,4 +1,4 @@
-package dev.compactmods.services.test.services;
+package dev.compactmods.services.test.example;
 
 public class CountingService implements AutoCloseable {
 
