@@ -3,9 +3,34 @@ name: Publish
 on: push
 
 jobs:
+  vars:
+    name: Get Variables
+    runs-on: ubuntu-22.04
+    outputs:
+      version: ${{steps.version.outputs.version}}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 150
+          fetch-tags: "true"
+
+      - name: Fetch Tags
+        run: git fetch --tags
+
+      - name: Version
+        id: version
+        uses: paulhatch/semantic-version@v5.4.0
+        with:
+          version_format: "${major}.${minor}.${patch}"
+          search_commit_body: true
+          bump_each_commit: true
+
   publish:
     name: Publish Code as Github Package - ${{ inputs.version }}
     runs-on: ubuntu-22.04
+    needs: vars
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -22,6 +47,6 @@ jobs:
       - name: Publish
         run: ./gradlew :publish
         env:
-          VERSION: ${{ inputs.version }}
+          VERSION: ${{ needs.vars.outputs.version }}
           GITHUB_ACTOR: ${{ secrets.GITHUB_ACTOR }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
