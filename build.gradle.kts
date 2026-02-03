@@ -1,9 +1,15 @@
+var envVersion: String = System.getenv("VERSION") ?: "9.9.9"
+if (envVersion.startsWith("v"))
+    envVersion = envVersion.trimStart('v')
+
 plugins {
     id("java")
+    id("maven-publish")
 }
 
+base.archivesName = "services"
 group = "dev.compactmods"
-version = "0.0.1"
+version = envVersion
 
 repositories {
     mavenCentral()
@@ -24,4 +30,22 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+val PACKAGES_URL = System.getenv("GH_PKG_URL") ?: "https://maven.pkg.github.com/compactmods/services"
+publishing {
+    publications.register<MavenPublication>("main") {
+        from(components.getByName("java"))
+    }
+
+    repositories {
+        // GitHub Packages
+        maven(PACKAGES_URL) {
+            name = "GitHubPackages"
+            credentials {
+                username = System.getenv("GITHUB_ACTOR")
+                password = System.getenv("GITHUB_TOKEN")
+            }
+        }
+    }
 }
